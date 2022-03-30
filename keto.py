@@ -20,7 +20,6 @@ def get_dish_url():
     soup = BeautifulSoup(response.text, 'lxml')
     raw_urls = soup.find_all('article', class_='category-obed')
     urls = [url.find('a').get('href') for url in raw_urls]
-    img_url = soup.select_one('img')['src']
     return urls
 
 
