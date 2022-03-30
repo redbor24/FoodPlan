@@ -98,7 +98,9 @@ ASGI_APPLICATION = 'dtb.asgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600, default="sqlite:///db.sqlite3"),
+    'default': dj_database_url.config(conn_max_age=600,
+                                      default="sqlite:///db.sqlite3"
+                                      ),
 }
 
 # Password validation
@@ -138,6 +140,8 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 # -----> CELERY
 REDIS_URL = os.getenv('REDIS_URL', 'redis://redis:6379')

@@ -4,8 +4,8 @@ from django.shortcuts import render
 
 from dtb.settings import DEBUG
 
-from tgbot.models import Location
-from tgbot.models import User
+from tgbot.models import User, Location
+from tgbot.models import MenuType, Allergy, Dish, Subscribe
 from tgbot.forms import BroadcastForm
 
 from tgbot.tasks import broadcast_message
@@ -49,6 +49,27 @@ class UserAdmin(admin.ModelAdmin):
             )
 
 
-@admin.register(Location)
-class LocationAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user_id', 'created_at']
+# @admin.register(Location)
+# class LocationAdmin(admin.ModelAdmin):
+#     list_display = ['id', 'user_id', 'created_at']
+
+
+@admin.register(MenuType)
+class MenuTypeAdmin(admin.ModelAdmin):
+    list_display = ['name']
+
+
+@admin.register(Allergy)
+class AllergyAdmin(admin.ModelAdmin):
+    list_display = ['sort_order', 'name']
+
+
+@admin.register(Dish)
+class DishAdmin(admin.ModelAdmin):
+    list_display = ['name', 'recipe', 'picture']
+
+
+@admin.register(Subscribe)
+class Subscribe(admin.ModelAdmin):
+    list_display = ['number_of_meals', 'number_of_person', 'allergy',
+                    'menu_type', 'duration']

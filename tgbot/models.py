@@ -10,6 +10,7 @@ from telegram.ext import CallbackContext
 from dtb.settings import DEBUG
 from tgbot.handlers.utils.info import extract_user_data_from_update
 from utils.models import CreateUpdateTracker, nb, CreateTracker, GetOrNoneManager
+from django.db import models
 
 
 class AdminUserManager(Manager):
@@ -74,6 +75,10 @@ class User(CreateUpdateTracker):
             return f'@{self.username}'
         return f"{self.first_name} {self.last_name}" if self.last_name else f"{self.first_name}"
 
+    class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = '_Пользователи'
+
 
 class Location(CreateTracker):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -93,3 +98,93 @@ class Location(CreateTracker):
             save_data_from_arcgis(latitude=self.latitude, longitude=self.longitude, location_id=self.pk)
         else:
             save_data_from_arcgis.delay(latitude=self.latitude, longitude=self.longitude, location_id=self.pk)
+
+
+class MenuType(models.Model):
+    name = models.CharField(
+        max_length=255, unique=True, blank=False, default='',
+        verbose_name='Наименование меню',
+    )
+
+    class Meta:
+        verbose_name = 'Тип меню'
+        verbose_name_plural = 'Типы меню'
+
+    def __str__(self):
+        return self.name
+
+
+class Allergy(models.Model):
+    name = models.CharField(
+        max_length=255, unique=True, blank=False, default='',
+        verbose_name='Наименование аллергии',
+    )
+
+    sort_order = models.IntegerField(
+        default=0,
+        verbose_name='Порядок сортировки'
+    )
+
+    class Meta:
+        verbose_name = 'Аллергия'
+        verbose_name_plural = 'Аллергии'
+
+    def __str__(self):
+        return self.name
+
+
+class Dish(models.Model):
+    name = models.CharField(
+        max_length=255, unique=True, blank=False, default='',
+        verbose_name='Наименование блюда',
+
+    )
+    recipe = models.CharField(
+        max_length=2048, blank=True,
+        verbose_name='Рецепт приготовления',
+
+    )
+    picture = models.ImageField(upload_to='images/', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Блюдо'
+        verbose_name_plural = 'Блюда'
+
+    def __str__(self):
+        return f'Блюдо "{self.name}"'
+
+
+class Subscribe(models.Model):
+    number_of_meals = models.IntegerField(
+        blank=False, default=1,
+        verbose_name='Количество приёмов пищи за день',
+    )
+    number_of_person = models.IntegerField(
+        blank=False, default=1,
+        verbose_name='Количество персон',
+    )
+    allergy = models.ForeignKey(
+        Allergy,
+        on_delete=models.DO_NOTHING,
+        verbose_name='Аллергия',
+        related_name='subscribe_allergy'
+    )
+    menu_type = models.ForeignKey(
+        MenuType,
+        on_delete=models.DO_NOTHING,
+        verbose_name='Тип меню',
+        related_name='subscribe_menu_type'
+    )
+    duration = models.IntegerField(
+        default=1,
+        verbose_name='Длительность подписки, мес.',
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписка'
+
+    def __str__(self):
+        return f'Подписка "{self.id}"'
+
+
