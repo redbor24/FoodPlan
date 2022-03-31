@@ -56,9 +56,11 @@ def parse_dish_page(url):
 
 
 def main():
+    dishes = list()
     urls = get_dish_url()
     for url in urls[:25]:
-        save_to_json(parse_dish_page(url), filename='keto_dish.json')
+        dishes.append(parse_dish_page(url))
+    save_to_json(dishes, filename = 'keto_dish.json')
 
 
 if __name__ == '__main__':
