@@ -1,16 +1,9 @@
-import os
 import requests
 import re
-import json
 
-from time import sleep
 from bs4 import BeautifulSoup
 
-
-def save_to_json(items):
-    json_filepath = 'dish.json'
-    with open(json_filepath, 'a') as file:
-        json.dump(items, file, indent=4, ensure_ascii=False)
+from save_to_json import save_to_json
 
 
 def get_dish_url():
@@ -26,8 +19,6 @@ def get_dish_url():
 def parse_dish_page(url):
     response = requests.get(url)
     response.raise_for_status()
-    # with open('index.html')as file:
-    #     response = file.read()
     soup = BeautifulSoup(response.text, 'lxml')
     title = soup.select_one('h1').text
     img_url = soup.find(class_='cooked-recipe-gallery').find('a').get('href')
@@ -65,15 +56,9 @@ def parse_dish_page(url):
 
 
 def main():
-    # print(parse_dish_page())
     urls = get_dish_url()
-    iteration_count = int(len(urls)) - 1
-    print(f'Всего итераций {iteration_count}')
     for url in urls[:25]:
-        save_to_json(parse_dish_page(url))
-        iteration_count = iteration_count - 1
-        print(f'Осталось итераций {iteration_count}')
-        sleep(3)
+        save_to_json(parse_dish_page(url), filename='keto_dish.json')
 
 
 if __name__ == '__main__':
