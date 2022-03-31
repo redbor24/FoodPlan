@@ -134,21 +134,67 @@ class Allergy(models.Model):
 
 
 class Dish(models.Model):
+    menu_type = models.ForeignKey(
+        MenuType,
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name='Тип меню',
+        related_name='dish_menu_type'
+    )
+
     name = models.CharField(
         max_length=255, unique=True, blank=False, default='',
-        verbose_name='Наименование блюда',
-
+        verbose_name='Наименование',
+    )
+    description = models.CharField(
+        max_length=2048, blank=True,
+        verbose_name='Описание',
     )
     recipe = models.CharField(
         max_length=2048, blank=True,
         verbose_name='Рецепт приготовления',
-
+    )
+    calories = models.FloatField(
+        default=0.0,
+        verbose_name='Калорийность',
     )
     picture = models.ImageField(upload_to='images/', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Блюдо'
         verbose_name_plural = 'Блюда'
+
+    def __str__(self):
+        return f'Блюдо "{self.name}"'
+
+
+class DishIngredient(models.Model):
+    dish = models.ForeignKey(
+        Dish,
+        on_delete=models.CASCADE,
+        verbose_name='Блюдо',
+        related_name='ingredient_dish'
+    )
+    name = models.CharField(
+        max_length=255, blank=False, default='',
+        verbose_name='Ингредиент'
+    )
+    amount = models.CharField(
+        max_length=20, default='',
+        verbose_name='Количество'
+    )
+    unit = models.CharField(
+        max_length=255, blank=False, default='',
+        verbose_name='Единица измерения'
+    )
+    allergy = models.ManyToManyField(
+        Allergy,
+        related_name='ingredient_allergy'
+    )
+
+    class Meta:
+        verbose_name = 'Ингредиент блюда'
+        verbose_name_plural = 'Ингредиенты блюд'
 
     def __str__(self):
         return f'Блюдо "{self.name}"'
