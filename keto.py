@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from save_to_json import save_to_json
 
 
-def get_dish_url():
+def get_dish_urls():
     url = 'https://keto-diets.ru/recepti/veg'
     response = requests.get(url)
     response.raise_for_status()
@@ -57,10 +57,10 @@ def parse_dish_page(url):
 
 def main():
     dishes = list()
-    urls = get_dish_url()
+    urls = get_dish_urls()
     for url in urls[:25]:
         dishes.append(parse_dish_page(url))
-    save_to_json(dishes, filename = 'keto_dish.json')
+    save_to_json(dishes, filename='keto_dish.json')
 
 
 if __name__ == '__main__':
