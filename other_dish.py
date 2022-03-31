@@ -90,13 +90,15 @@ def get_dish_detail(url, user_agent):
 def main():
     env = Env()
     env.read_env()
-    user_agent=env('USER_AGENT')
+    user_agent = env('USER_AGENT')
     parser = add_argument_parser()
     args = parser.parse_args()
     filename = args.filename
     urls = get_dish_urls(args.url, user_agent)
+    dishes = list()
     for url in urls:
-        save_to_json(get_dish_detail(url, user_agent), filename=filename)
+        dishes.append(get_dish_detail(url, user_agent))
+    save_to_json(dishes, filename=filename)
 
 
 if __name__ == '__main__':
