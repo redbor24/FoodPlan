@@ -9,8 +9,11 @@ from telegram.ext import CallbackContext
 
 from dtb.settings import DEBUG
 from tgbot.handlers.utils.info import extract_user_data_from_update
-from utils.models import CreateUpdateTracker, nb, CreateTracker, GetOrNoneManager
+from utils.models import CreateUpdateTracker, nb, CreateTracker
+from utils.models import GetOrNoneManager
 from django.db import models
+from django.db.models import Q
+import random
 
 
 class AdminUserManager(Manager):
@@ -23,15 +26,16 @@ class User(CreateUpdateTracker):
     username = models.CharField(max_length=32, **nb)
     first_name = models.CharField(max_length=256)
     last_name = models.CharField(max_length=256, **nb)
-    language_code = models.CharField(max_length=8, help_text="Telegram client's lang", **nb)
+    language_code = models.CharField(max_length=8,
+                                     help_text="Telegram client's lang", **nb)
     deep_link = models.CharField(max_length=64, **nb)
 
     is_blocked_bot = models.BooleanField(default=False)
 
     is_admin = models.BooleanField(default=False)
 
-    objects = GetOrNoneManager()  # user = User.objects.get_or_none(user_id=<some_id>)
-    admins = AdminUserManager()  # User.admins.all()
+    objects = GetOrNoneManager()
+    admins = AdminUserManager()
 
     def __str__(self):
         return f'@{self.username}' if self.username is not None else f'{self.user_id}'
@@ -40,13 +44,16 @@ class User(CreateUpdateTracker):
     def get_user_and_created(cls, update: Update, context: CallbackContext) -> Tuple[User, bool]:
         """ python-telegram-bot's Update, Context --> User instance """
         data = extract_user_data_from_update(update)
-        u, created = cls.objects.update_or_create(user_id=data["user_id"], defaults=data)
+        u, created = cls.objects.update_or_create(
+            user_id=data["user_id"],
+            defaults=data
+        )
 
         if created:
             # Save deep_link to User model
             if context is not None and context.args is not None and len(context.args) > 0:
                 payload = context.args[0]
-                if str(payload).strip() != str(data["user_id"]).strip():  # you can't invite yourself
+                if str(payload).strip() != str(data["user_id"]).strip():
                     u.deep_link = payload
                     u.save()
 
@@ -67,13 +74,17 @@ class User(CreateUpdateTracker):
 
     @property
     def invited_users(self) -> QuerySet[User]:
-        return User.objects.filter(deep_link=str(self.user_id), created_at__gt=self.created_at)
+        return User.objects.filter(
+            deep_link=str(self.user_id),
+            created_at__gt=self.created_at
+        )
 
     @property
     def tg_str(self) -> str:
         if self.username:
             return f'@{self.username}'
-        return f"{self.first_name} {self.last_name}" if self.last_name else f"{self.first_name}"
+        return f"{self.first_name} {self.last_name}" \
+            if self.last_name else f"{self.first_name}"
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -88,16 +99,25 @@ class Location(CreateTracker):
     objects = GetOrNoneManager()
 
     def __str__(self):
-        return f"user: {self.user}, created at {self.created_at.strftime('(%H:%M, %d %B %Y)')}"
+        return f"user: {self.user}" \
+               f", created at {self.created_at.strftime('(%H:%M, %d %B %Y)')}"
 
     def save(self, *args, **kwargs):
         super(Location, self).save(*args, **kwargs)
         # Parse location with arcgis
         from arcgis.tasks import save_data_from_arcgis
         if DEBUG:
-            save_data_from_arcgis(latitude=self.latitude, longitude=self.longitude, location_id=self.pk)
+            save_data_from_arcgis(
+                latitude=self.latitude,
+                longitude=self.longitude,
+                location_id=self.pk
+            )
         else:
-            save_data_from_arcgis.delay(latitude=self.latitude, longitude=self.longitude, location_id=self.pk)
+            save_data_from_arcgis.delay(
+                latitude=self.latitude,
+                longitude=self.longitude,
+                location_id=self.pk
+            )
 
 
 class MenuType(models.Model):
@@ -119,7 +139,6 @@ class Allergy(models.Model):
         max_length=255, unique=True, blank=False, default='',
         verbose_name='Наименование аллергии',
     )
-
     sort_order = models.IntegerField(
         default=0,
         verbose_name='Порядок сортировки'
@@ -161,7 +180,6 @@ class Dish(models.Model):
     picture = models.URLField(
         max_length=1024,
         verbose_name='Ссылка на картинку',
-
     )
 
     class Meta:
@@ -170,6 +188,13 @@ class Dish(models.Model):
 
     def __str__(self):
         return f'Блюдо "{self.name}"'
+
+    def get_allergies(self):
+        dish_allergy = []
+        for dish_ingredient in self.ingredient_dish.all():
+            dish_allergy = set(dish_allergy) | \
+                           set(dish_ingredient.allergy.filter(~Q(name="нет")))
+        return dish_allergy
 
 
 class DishIngredient(models.Model):
@@ -193,7 +218,7 @@ class DishIngredient(models.Model):
     )
     allergy = models.ManyToManyField(
         Allergy,
-        related_name='ingredient_allergy'
+        related_name='ingredient_allergy',
     )
 
     class Meta:
@@ -235,4 +260,16 @@ class Subscribe(models.Model):
     def __str__(self):
         return f'Подписка "{self.id}"'
 
-
+    def get_dishes(self):
+        menu_type_dishes = Dish.objects.filter(menu_type=self.menu_type)
+        subs_allergies = set(self.allergy.filter(~Q(name="нет")))
+        # print(f'subs_allergies: {subs_allergies}')
+        dishes = []
+        for dish in menu_type_dishes:
+            dish_allergies = dish.get_allergies()
+            xx = dish_allergies & subs_allergies
+            # print(f'dish_allergies for "{dish}": {dish_allergies}')
+            # print(f'inersection: {xx}')
+            if not xx:
+                dishes.append(dish)
+        return dishes[random.randint(0, len(dishes) - 1)]

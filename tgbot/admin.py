@@ -71,10 +71,10 @@ class DishAdmin(admin.ModelAdmin):
 
 @admin.register(DishIngredient)
 class DishIngredientAdmin(admin.ModelAdmin):
-    list_display = ['dish', 'name', 'amount', 'unit']
+    list_display = ['dish_id', 'id', 'dish', 'name', 'amount', 'unit']
 
 
 @admin.register(Subscribe)
 class Subscribe(admin.ModelAdmin):
-    list_display = ['number_of_meals', 'number_of_person', 'allergy',
-                    'menu_type', 'duration']
+    list_display = ['id', 'number_of_meals', 'number_of_person', 'menu_type',
+                    'duration']

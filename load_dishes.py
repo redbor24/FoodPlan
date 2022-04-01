@@ -9,11 +9,12 @@ from tgbot.models import MenuType, Dish, DishIngredient
 #     return re.sub(r'[^0-9.,-]', '', str_value)
 
 
-def load_dishes(dishes_json, menu_type):
+def load_menu_dishes(dishes_json, menu_type):
     try:
         menu = MenuType.objects.get(name=menu_type)
     except Exception as e:
         print(f'Ошибка для "{menu_type}"! {e}')
+        return
 
     print(f' Удаление блюд меню "{menu_type}" перед загрузкой...')
     print(f'  блюд: {Dish.objects.count()}')
@@ -25,6 +26,7 @@ def load_dishes(dishes_json, menu_type):
         print(f'  ингредиентов: {DishIngredient.objects.count()}')
     except Exception as e:
         print(f'Ошибка удаления блюд: {e}')
+        return
 
     with open(dishes_json, 'r', encoding='utf-8') as f:
         dishes = json.load(f)
@@ -36,12 +38,12 @@ def load_dishes(dishes_json, menu_type):
             name=dish['title'],
             description=dish['description'],
             recipe=dish['recept'],
-            calories=dish['calories']
-            # picture=
+            calories=dish['calories'],
+            picture=dish['img_url']
         )
         new_dish.save()
         for ingredient in dish['ingredients']:
-            print(ingredient['name'], ingredient['amount'], ingredient['measurement'])
+            # print(ingredient['name'], ingredient['amount'], ingredient['measurement'])
             DishIngredient(
                 dish=new_dish,
                 name=ingredient['name'],
@@ -55,4 +57,4 @@ def load_dishes(dishes_json, menu_type):
 
 
 if __name__ == '__main__':
-    load_dishes('json/dishes.json', 'Кето')
+    load_menu_dishes('json/dishes.json', 'Кето')
