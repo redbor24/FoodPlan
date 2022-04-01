@@ -33,6 +33,12 @@ class User(CreateUpdateTracker):
     is_blocked_bot = models.BooleanField(default=False)
 
     is_admin = models.BooleanField(default=False)
+    phone = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        verbose_name='Телефон (+код xxx xxx-xx-xx)'
+    )
 
     objects = GetOrNoneManager()
     admins = AdminUserManager()
