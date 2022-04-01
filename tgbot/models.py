@@ -141,7 +141,6 @@ class Dish(models.Model):
         verbose_name='Тип меню',
         related_name='dish_menu_type'
     )
-
     name = models.CharField(
         max_length=255, unique=True, blank=False, default='',
         verbose_name='Наименование',
@@ -154,11 +153,16 @@ class Dish(models.Model):
         max_length=2048, blank=True,
         verbose_name='Рецепт приготовления',
     )
-    calories = models.FloatField(
-        default=0.0,
+    calories = models.CharField(
+        max_length=20, blank=False,
+        default='',
         verbose_name='Калорийность',
     )
-    picture = models.ImageField(upload_to='images/', null=True, blank=True)
+    picture = models.URLField(
+        max_length=1024,
+        verbose_name='Ссылка на картинку',
+
+    )
 
     class Meta:
         verbose_name = 'Блюдо'
@@ -209,11 +213,9 @@ class Subscribe(models.Model):
         blank=False, default=1,
         verbose_name='Количество персон',
     )
-    allergy = models.ForeignKey(
+    allergy = models.ManyToManyField(
         Allergy,
-        on_delete=models.DO_NOTHING,
-        verbose_name='Аллергия',
-        related_name='subscribe_allergy'
+        verbose_name='Аллергии',
     )
     menu_type = models.ForeignKey(
         MenuType,
