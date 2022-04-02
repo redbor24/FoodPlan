@@ -202,6 +202,19 @@ class Dish(models.Model):
                            set(dish_ingredient.allergy.filter(~Q(name="нет")))
         return dish_allergy
 
+    def get_full_description(self):
+        dish_description = f'''{self.picture}
+Блюдо: {self.name}
+Описание: {self.description}
+Рецепт приготовления: {self.recipe}
+Калорийность: {self.calories}
+Ингредиенты:
+'''
+        for ingredient in self.ingredient_dish.all():
+            dish_description += f'{ingredient.name}, {ingredient.amount}, ' \
+                                f'{ingredient.unit}\n'
+        return dish_description
+
 
 class DishIngredient(models.Model):
     dish = models.ForeignKey(
@@ -266,16 +279,15 @@ class Subscribe(models.Model):
     def __str__(self):
         return f'Подписка "{self.id}"'
 
-    def get_dishes(self):
+    def get_subscribe_dish(self):
         menu_type_dishes = Dish.objects.filter(menu_type=self.menu_type)
         subs_allergies = set(self.allergy.filter(~Q(name="нет")))
         # print(f'subs_allergies: {subs_allergies}')
         dishes = []
-        for dish in menu_type_dishes:
+        # for dish in menu_type_dishes:
+        for dish in Dish.objects.filter(menu_type=self.menu_type):
             dish_allergies = dish.get_allergies()
-            xx = dish_allergies & subs_allergies
-            # print(f'dish_allergies for "{dish}": {dish_allergies}')
-            # print(f'inersection: {xx}')
-            if not xx:
+            # if not dish_allergies & subs_allergies:
+            if not dish.get_allergies() & subs_allergies:
                 dishes.append(dish)
         return dishes[random.randint(0, len(dishes) - 1)]
