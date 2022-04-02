@@ -39,6 +39,11 @@ class User(CreateUpdateTracker):
         blank=True,
         verbose_name='Телефон (+код xxx xxx-xx-xx)'
     )
+    subscription_paid = models.BooleanField(
+        blank=False,
+        default=False,
+        verbose_name='Подписка оплачена'
+    )
 
     objects = GetOrNoneManager()
     admins = AdminUserManager()
