@@ -39,11 +39,6 @@ class User(CreateUpdateTracker):
         blank=True,
         verbose_name='Телефон (+код xxx xxx-xx-xx)'
     )
-    subscription_paid = models.BooleanField(
-        blank=False,
-        default=False,
-        verbose_name='Подписка оплачена'
-    )
 
     objects = GetOrNoneManager()
     admins = AdminUserManager()
@@ -204,7 +199,7 @@ class Dish(models.Model):
         dish_allergy = []
         for dish_ingredient in self.ingredient_dish.all():
             dish_allergy = set(dish_allergy) | \
-                           set(dish_ingredient.allergy.filter(~Q(name="нет")))
+                set(dish_ingredient.allergy.filter(~Q(name="нет")))
         return dish_allergy
 
     def get_full_description(self):
@@ -254,6 +249,12 @@ class DishIngredient(models.Model):
 
 
 class Subscribe(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+        related_name='subscribe_user'
+    )
     number_of_meals = models.IntegerField(
         blank=False, default=1,
         verbose_name='Количество приёмов пищи за день',
@@ -275,6 +276,11 @@ class Subscribe(models.Model):
     duration = models.IntegerField(
         default=1,
         verbose_name='Длительность подписки, мес.',
+    )
+    subscription_paid = models.BooleanField(
+        blank=False,
+        default=False,
+        verbose_name='Подписка оплачена'
     )
 
     class Meta:
