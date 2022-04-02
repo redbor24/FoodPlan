@@ -251,7 +251,7 @@ class DishIngredient(models.Model):
 class Subscribe(models.Model):
     user = models.ForeignKey(
         User,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         verbose_name='Пользователь',
         related_name='subscribe_user'
     )
