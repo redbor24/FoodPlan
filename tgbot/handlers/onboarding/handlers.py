@@ -1,39 +1,195 @@
 import datetime
 
 from django.utils import timezone
-from telegram import ParseMode, Update
-from telegram.ext import CallbackContext
-
+from telegram import (ForceReply, InlineKeyboardButton, InlineKeyboardMarkup,
+                      KeyboardButton, ParseMode, ReplyKeyboardMarkup,
+                      ReplyKeyboardRemove, Update)
+from telegram.ext import (CallbackContext, CallbackQueryHandler,
+                          CommandHandler, ConversationHandler, Filters,
+                          MessageHandler)
 from tgbot.handlers.onboarding import static_text
+from tgbot.handlers.onboarding.keyboards import make_keyboard_for_start_command
 from tgbot.handlers.utils.info import extract_user_data_from_update
 from tgbot.models import User
-from tgbot.handlers.onboarding.keyboards import make_keyboard_for_start_command
 
 
-def command_start(update: Update, context: CallbackContext) -> None:
+def keyboard_row_divider(full_list, row_width=2):
+    """Divide list into rows for keyboard"""
+    for i in range(0, len(full_list), row_width):
+        yield full_list[i: i + row_width]
+
+
+def escape_characters(text: str) -> str:
+    """Screen characters for Markdown V2"""
+    text = text.replace('\\', '')
+
+    characters = ['.', '+']
+    for character in characters:
+        text = text.replace(character, f'\{character}')
+    return text
+
+
+def start_handler(update: Update, context: CallbackContext) -> str:
     u, created = User.get_user_and_created(update, context)
 
     if created:
-        text = static_text.start_created.format(first_name=u.first_name)
+
+        # text = static_text.start_created.format(first_name=u.first_name)
+        update.message.reply_text(
+            'Ваша фамилия:',
+            reply_markup=ForceReply(force_reply=True,
+                                    input_field_placeholder='Фамилия',
+                                    selective=True)
+        )
+        return 'get_user_name'
     else:
-        text = static_text.start_not_created.format(first_name=u.first_name)
+        update.message.reply_text(
+            'Ваша фамилия:',
+            reply_markup=ForceReply(force_reply=True,
+                                    input_field_placeholder='Фамилия',
+                                    selective=True)
+        )
+        # TODO вернуть get_user_name
+        return 'get_user_name'
+        # text = static_text.start_not_created.format(first_name=u.first_name)
 
-    update.message.reply_text(text=text,
-                              reply_markup=make_keyboard_for_start_command())
+    # update.message.reply_text(text=text,
+    #                           reply_markup=make_keyboard_for_start_command())
 
 
-def secret_level(update: Update, context: CallbackContext) -> None:
-    # callback_data: SECRET_LEVEL_BUTTON variable from manage_data.py
-    """ Pressed 'secret_level_button_text' after /start command"""
-    user_id = extract_user_data_from_update(update)['user_id']
-    text = static_text.unlock_secret_room.format(
-        user_count=User.objects.count(),
-        active_24=User.objects.filter(updated_at__gte=timezone.now() - datetime.timedelta(hours=24)).count()
+def get_surname(update: Update, context: CallbackContext):
+    """Получение фамилии."""
+    update.message.reply_text(
+        'Ваша фамилия:',
+        reply_markup=ForceReply(force_reply=True,
+                                input_field_placeholder='Фамилия',
+                                selective=True)
+    )
+    return 'get_user_name'
+
+
+def get_user_name(update: Update, context: CallbackContext):
+    """Получение имени."""
+    context.user_data['last_name'] = update.message.text
+    update.message.reply_text(
+        'Ваше имя:',
+        reply_markup=ForceReply(force_reply=True,
+                                input_field_placeholder='Имя',
+                                selective=True)
+    )
+    return 'select_input_phone'
+
+
+def select_input_phone(update: Update, context: CallbackContext):
+    """Отображение способа получения номера телефона."""
+    context.user_data['first_name'] = update.message.text
+
+    enter_phone = KeyboardButton('Ввести номер вручную ☎️',
+                                 request_contact=False)
+    send_phone = KeyboardButton('Отправить свой контакт ☎️',
+                                request_contact=True)
+
+    reply_keyboard = list(keyboard_row_divider([enter_phone, send_phone], 1))
+
+    update.message.reply_text(
+        'Каким способом ввести номер телефона ?',
+        parse_mode=ParseMode.MARKDOWN_V2,
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard,
+            one_time_keyboard=True,
+            input_field_placeholder='',
+            resize_keyboard=True,)
     )
 
-    context.bot.edit_message_text(
-        text=text,
-        chat_id=user_id,
-        message_id=update.callback_query.message.message_id,
-        parse_mode=ParseMode.HTML
+    return 'get_telephone'
+
+
+def get_telephone(update: Update, context: CallbackContext):
+    """Получение номера телефона."""
+    contact = update.effective_message.contact
+    if contact:
+        contact = update.effective_message.contact
+        update.message.text = contact.phone_number
+        # return show_persion_data(update, context)
+
+    update.message.reply_text(
+        'Ваш телефон:',
+        reply_markup=ForceReply(force_reply=True,
+                                input_field_placeholder='Телефон',
+                                selective=True)
+    )
+    return 'show_persion_data'
+
+
+def cancel(update: Update, context: CallbackContext):
+    """Прекращает работу очереди разговора."""
+    return ConversationHandler.END
+
+
+def get_handler_person():
+    """Возвращает обработчик разговоров."""
+    return ConversationHandler(
+        entry_points=[CommandHandler('start', start_handler)],
+        states={
+            # "inline_button_agreement": [
+            #     CallbackQueryHandler(
+            #         inline_button_agreement
+            #     )
+            # ],
+            # "show_persion_data": [
+            #     MessageHandler(
+            #         Filters.text,
+            #         show_persion_data
+            #     )
+            # ],
+            "get_surname": [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    get_surname
+                )
+            ],
+            "get_user_name": [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    get_user_name
+                )
+            ],
+            # "get_middle_name": [
+            #     MessageHandler(
+            #         Filters.text & ~Filters.command,
+            #         get_middle_name
+            #     )
+            # ],
+            # "get_date_birth": [
+            #     MessageHandler(
+            #         Filters.text & ~Filters.command,
+            #         get_date_birth
+            #     )
+            # ],
+            # "get_passport": [
+            #     MessageHandler(
+            #         Filters.text & ~Filters.command,
+            #         get_passport
+            #     )
+            # ],
+            "select_input_phone": [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    select_input_phone
+                )
+            ],
+            "get_telephone": [
+                MessageHandler(
+                    (Filters.text | Filters.contact) & ~Filters.command,
+                    get_telephone
+                )
+            ],
+            # "process_answer_yes_no": [
+            #     MessageHandler(
+            #         Filters.text & ~Filters.command,
+            #         process_answer_yes_no
+            #     )
+            # ],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)]
     )
