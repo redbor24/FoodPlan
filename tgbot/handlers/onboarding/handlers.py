@@ -33,24 +33,17 @@ def start_handler(update: Update, context: CallbackContext) -> str:
     u, created = User.get_user_and_created(update, context)
 
     if created:
-
-        # text = static_text.start_created.format(first_name=u.first_name)
-        update.message.reply_text(
-            'Ваша фамилия:',
-            reply_markup=ForceReply(force_reply=True,
-                                    input_field_placeholder='Фамилия',
-                                    selective=True)
-        )
-        return 'get_user_name'
+        return get_surname(update, context)
     else:
-        update.message.reply_text(
-            'Ваша фамилия:',
-            reply_markup=ForceReply(force_reply=True,
-                                    input_field_placeholder='Фамилия',
-                                    selective=True)
-        )
-        # TODO вернуть get_user_name
-        return 'get_user_name'
+        return get_surname(update, context)
+        # update.message.reply_text(
+        #     'Ваша фамилия:',
+        #     reply_markup=ForceReply(force_reply=True,
+        #                             input_field_placeholder='Фамилия',
+        #                             selective=True)
+        # )
+        # # TODO вернуть get_user_name
+        # return 'get_user_name'
         # text = static_text.start_not_created.format(first_name=u.first_name)
 
     # update.message.reply_text(text=text,
