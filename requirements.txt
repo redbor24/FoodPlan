@@ -9,4 +9,4 @@ lxml==4.8.0
 python-telegram-bot==13.11
 requests==2.27.1
 whitenoise==6.0.0
-psycopg2==2.9.3
+psycopg2-binary==2.8.*
