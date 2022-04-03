@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from django.utils import timezone
 from telegram import (ForceReply, InlineKeyboardButton, InlineKeyboardMarkup,
@@ -10,7 +11,7 @@ from telegram.ext import (CallbackContext, CallbackQueryHandler,
 from tgbot.handlers.onboarding import static_text
 from tgbot.handlers.onboarding.keyboards import make_keyboard_for_start_command
 from tgbot.handlers.utils.info import extract_user_data_from_update
-from tgbot.models import User
+from tgbot.models import Allergy, Subscribe, User
 
 
 def keyboard_row_divider(full_list, row_width=2):
@@ -30,45 +31,55 @@ def escape_characters(text: str) -> str:
 
 
 def start_handler(update: Update, context: CallbackContext) -> str:
+    if 'allergy_ids' not in context.user_data:
+        context.user_data['allergy_ids'] = list()
+
     return choosing_user_actions(update, context)
 
 
 def choosing_user_actions(update: Update, context: CallbackContext):
-    reply_keyboard = list(keyboard_row_divider(
-        ['🍽 Получить блюдо дня',
-         '👤 Профиль',
-         '📨 Подписка'],
-        1
-    ))
+    u, created = User.get_user_and_created(update, context)
 
+    # if created:
     update.message.reply_text(
-        'Выберите действие:',
-        parse_mode=ParseMode.MARKDOWN_V2,
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard,
-            one_time_keyboard=True,
-            input_field_placeholder='',
-            resize_keyboard=True,)
+        'Здравствуйте, для продолжения необходимо оформить подписку.',
+        reply_markup=ReplyKeyboardRemove()
     )
-    return 'process_user_selection'
+
+    return get_allergy(update, context)
+
+    # reply_keyboard = list(keyboard_row_divider(
+    #     ['🍽 Получить блюдо дня',
+    #      '👤 Профиль',
+    #      '📨 Подписка'],
+    #     2
+    # ))
+
+    # update.message.reply_text(
+    #     'Выберите действие:',
+    #     parse_mode=ParseMode.MARKDOWN_V2,
+    #     reply_markup=ReplyKeyboardMarkup(
+    #         reply_keyboard,
+    #         # one_time_keyboard=True,
+    #         input_field_placeholder='',
+    #         resize_keyboard=True,)
+    # )
+    # return 'process_user_selection'
 
 
 def process_user_selection(update: Update, context: CallbackContext):
     text = update.message.text
 
     if text == '🍽 Получить блюдо дня':
-        update.message.reply_text('🍽 Кушайте манную кашу.',
-                                  reply_markup=ReplyKeyboardRemove())
+        update.message.reply_text('🍽 Кушайте манную кашу.')
         return choosing_user_actions(update, context)
 
     elif text == '👤 Профиль':
-        update.message.reply_text('👤 Данные Вашего профиля.',
-                                  reply_markup=ReplyKeyboardRemove())
+        update.message.reply_text('👤 Данные Вашего профиля.')
         return choosing_user_actions(update, context)
 
     elif text == '📨 Подписка':
-        update.message.reply_text('📨 Данные Вашей подписки.',
-                                  reply_markup=ReplyKeyboardRemove())
+        update.message.reply_text('📨 Данные Вашей подписки.')
         return choosing_user_actions(update, context)
 
 
@@ -153,6 +164,70 @@ def save_user_data(update: Update, context: CallbackContext):
     return choosing_user_actions(update, context)
 
 
+def get_allergy(update: Update, context: CallbackContext):
+    """"""
+    reply_keyboard = list()
+    reply_keyboard.append(['💾 Сохранить'])
+
+    for allergy_name in Allergy.objects.all():
+        mark = ''
+
+        if allergy_name.id in context.user_data['allergy_ids']:
+            mark = '☑️'
+
+        reply_keyboard.append(
+            [f'{allergy_name.id}. {allergy_name.name} {mark}']
+        )
+
+    update.message.reply_text(
+        'Если у Вас есть аллергия, выберите:',
+        parse_mode=ParseMode.MARKDOWN_V2,
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard,
+            # one_time_keyboard=True,
+            input_field_placeholder='',
+            resize_keyboard=True,)
+    )
+    return 'process_allergies_selection'
+
+
+def process_allergies_selection(update: Update, context: CallbackContext):
+    text = update.message.text
+
+    if text == '💾 Сохранить':
+        return get_number_of_meals(update, context)
+
+    else:
+        allergy_id = int(re.sub(r'[^0-9]', '', text))
+
+        if allergy_id in context.user_data['allergy_ids']:
+            context.user_data['allergy_ids'].remove(allergy_id)
+        else:
+            context.user_data['allergy_ids'].append(allergy_id)
+
+        return get_allergy(update, context)
+
+
+def get_number_of_meals(update: Update, context: CallbackContext):
+    """"""
+    pass
+
+
+def get_number_of_person(update: Update, context: CallbackContext):
+    """"""
+    pass
+
+
+def get_menu_type(update: Update, context: CallbackContext):
+    """"""
+    pass
+
+
+def get_duration(update: Update, context: CallbackContext):
+    """"""
+    pass
+
+
 def cancel(update: Update, context: CallbackContext):
     """Прекращает работу очереди разговора."""
     return ConversationHandler.END
@@ -192,24 +267,6 @@ def get_handler_person():
                     get_user_name
                 )
             ],
-            # "get_middle_name": [
-            #     MessageHandler(
-            #         Filters.text & ~Filters.command,
-            #         get_middle_name
-            #     )
-            # ],
-            # "get_date_birth": [
-            #     MessageHandler(
-            #         Filters.text & ~Filters.command,
-            #         get_date_birth
-            #     )
-            # ],
-            'save_user_data': [
-                MessageHandler(
-                    Filters.text & ~Filters.command,
-                    save_user_data
-                )
-            ],
             'select_input_phone': [
                 MessageHandler(
                     Filters.text & ~Filters.command,
@@ -220,6 +277,48 @@ def get_handler_person():
                 MessageHandler(
                     (Filters.text | Filters.contact) & ~Filters.command,
                     get_telephone
+                )
+            ],
+            'save_user_data': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    save_user_data
+                )
+            ],
+            'get_allergy': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    get_allergy
+                )
+            ],
+            'process_allergies_selection': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    process_allergies_selection
+                )
+            ],
+            'get_number_of_meals': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    get_number_of_meals
+                )
+            ],
+            'get_number_of_person': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    get_number_of_person
+                )
+            ],
+            'get_menu_type': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    get_menu_type
+                )
+            ],
+            'get_duration': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    get_duration
                 )
             ],
             # "process_answer_yes_no": [
