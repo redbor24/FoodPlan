@@ -68,6 +68,7 @@ class AllergyAdmin(admin.ModelAdmin):
 @admin.register(Dish)
 class DishAdmin(admin.ModelAdmin):
     list_display = ['menu_type', 'name', 'recipe']
+    list_filter = ['menu_type']
 
 
 @admin.register(DishIngredient)
