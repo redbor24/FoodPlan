@@ -40,31 +40,38 @@ def start_handler(update: Update, context: CallbackContext) -> str:
 def choosing_user_actions(update: Update, context: CallbackContext):
     u, created = User.get_user_and_created(update, context)
 
-    # if created:
-    update.message.reply_text(
-        'Здравствуйте, для продолжения необходимо оформить подписку.',
-        reply_markup=ReplyKeyboardRemove()
-    )
+    if created:
+        update.message.reply_text(
+            'Здравствуйте, для продолжения необходимо заполнить профиль.',
+            reply_markup=ReplyKeyboardRemove()
+        )
+        return get_surname(update, context)
+    else:
+        # TODO тут нужно проверить на наличие не оплаченной подписки.
 
-    return get_duration(update, context)
+        update.message.reply_text(
+            'Здравствуйте, для продолжения необходимо оформить подписку.',
+            reply_markup=ReplyKeyboardRemove()
+        )
+        return get_allergy(update, context)
 
-    # reply_keyboard = list(keyboard_row_divider(
-    #     ['🍽 Получить блюдо дня',
-    #      '👤 Профиль',
-    #      '📨 Подписка'],
-    #     1
-    # ))
+        # reply_keyboard = list(keyboard_row_divider(
+        #     ['🍽 Получить блюдо дня',
+        #     '👤 Профиль',
+        #     '📨 Подписка'],
+        #     1
+        # ))
 
-    # update.message.reply_text(
-    #     'Выберите действие:',
-    #     parse_mode=ParseMode.MARKDOWN_V2,
-    #     reply_markup=ReplyKeyboardMarkup(
-    #         reply_keyboard,
-    #         # one_time_keyboard=True,
-    #         input_field_placeholder='',
-    #         resize_keyboard=True,)
-    # )
-    # return 'process_user_selection'
+        # update.message.reply_text(
+        #     'Выберите действие:',
+        #     parse_mode=ParseMode.MARKDOWN_V2,
+        #     reply_markup=ReplyKeyboardMarkup(
+        #         reply_keyboard,
+        #         # one_time_keyboard=True,
+        #         input_field_placeholder='',
+        #         resize_keyboard=True,)
+        # )
+        # return 'process_user_selection'
 
 
 def process_user_selection(update: Update, context: CallbackContext):
@@ -309,7 +316,7 @@ def process_duration_selection(update: Update, context: CallbackContext):
     else:
         return get_duration(update, context)
 
-    # TODO сохраняем подписку здесь.
+    # TODO сохраняем подписку здесь и уходим на оплату.
 
     return choosing_user_actions(update, context)
 
