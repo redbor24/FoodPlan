@@ -11,7 +11,7 @@ from telegram.ext import (CallbackContext, CallbackQueryHandler,
 from tgbot.handlers.onboarding import static_text
 from tgbot.handlers.onboarding.keyboards import make_keyboard_for_start_command
 from tgbot.handlers.utils.info import extract_user_data_from_update
-from tgbot.models import Allergy, Subscribe, User
+from tgbot.models import Allergy, MenuType, Subscribe, User
 
 
 def keyboard_row_divider(full_list, row_width=2):
@@ -46,13 +46,13 @@ def choosing_user_actions(update: Update, context: CallbackContext):
         reply_markup=ReplyKeyboardRemove()
     )
 
-    return get_allergy(update, context)
+    return get_duration(update, context)
 
     # reply_keyboard = list(keyboard_row_divider(
     #     ['🍽 Получить блюдо дня',
     #      '👤 Профиль',
     #      '📨 Подписка'],
-    #     2
+    #     1
     # ))
 
     # update.message.reply_text(
@@ -97,6 +97,7 @@ def get_surname(update: Update, context: CallbackContext):
 def get_user_name(update: Update, context: CallbackContext):
     """Получение имени."""
     context.user_data['last_name'] = update.message.text
+
     update.message.reply_text(
         'Ваше имя:',
         reply_markup=ForceReply(force_reply=True,
@@ -133,6 +134,7 @@ def select_input_phone(update: Update, context: CallbackContext):
 def get_telephone(update: Update, context: CallbackContext):
     """Получение номера телефона."""
     contact = update.effective_message.contact
+
     if contact:
         contact = update.effective_message.contact
         update.message.text = contact.phone_number
@@ -150,12 +152,14 @@ def get_telephone(update: Update, context: CallbackContext):
 def save_user_data(update: Update, context: CallbackContext):
     """Сохранение данных пользователя"""
     user = User.get_user(update, context)
+
     if context.user_data['last_name']:
         user.last_name = context.user_data['last_name']
     if context.user_data['first_name']:
         user.first_name = context.user_data['first_name']
     if update.message.text:
         user.phone = update.message.text
+
     user.save()
 
     update.message.reply_text('Данные профиля сохранены.',
@@ -210,22 +214,104 @@ def process_allergies_selection(update: Update, context: CallbackContext):
 
 def get_number_of_meals(update: Update, context: CallbackContext):
     """"""
-    pass
+    update.message.reply_text(
+        'Количество приёмов пищи за день:',
+        reply_markup=ForceReply(force_reply=True,
+                                input_field_placeholder='1 - 3',
+                                selective=True)
+    )
+    return 'get_number_of_person'
 
 
 def get_number_of_person(update: Update, context: CallbackContext):
     """"""
-    pass
+    context.user_data['number_of_meals'] = update.message.text
+
+    update.message.reply_text(
+        'Количество персон:',
+        reply_markup=ForceReply(force_reply=True,
+                                input_field_placeholder='1 - 4',
+                                selective=True)
+    )
+    return 'get_menu_type'
 
 
 def get_menu_type(update: Update, context: CallbackContext):
     """"""
-    pass
+    context.user_data['number_of_person'] = update.message.text
+
+    reply_keyboard = list()
+
+    for menu_type in MenuType.objects.all():
+        reply_keyboard.append([f'{menu_type.id}. {menu_type.name}'])
+
+    update.message.reply_text(
+        'Выберите тип меню:',
+        parse_mode=ParseMode.MARKDOWN_V2,
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard,
+            # one_time_keyboard=True,
+            input_field_placeholder='',
+            resize_keyboard=True,)
+    )
+
+    return 'process_menu_type_selection'
+
+
+def process_menu_type_selection(update: Update, context: CallbackContext):
+    text = update.message.text
+
+    if text:
+        menu_type_id = int(re.sub(r'[^0-9]', '', text))
+
+        context.user_data['menu_type'] = menu_type_id
+
+        return get_duration(update, context)
+    else:
+        return get_menu_type(update, context)
 
 
 def get_duration(update: Update, context: CallbackContext):
     """"""
-    pass
+    reply_keyboard = list(keyboard_row_divider(
+        ['1️⃣',
+         '3️⃣',
+         '6️⃣',
+         '1️⃣2️⃣'],
+        2
+    ))
+
+    update.message.reply_text(
+        'Выберите  длительность подписки в месяцах:',
+        parse_mode=ParseMode.MARKDOWN_V2,
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard,
+            # one_time_keyboard=True,
+            input_field_placeholder='',
+            resize_keyboard=True,)
+    )
+
+    return 'process_duration_selection'
+
+
+def process_duration_selection(update: Update, context: CallbackContext):
+    text = update.message.text
+
+    duration = 1
+
+    if text == '3️⃣':
+        duration = 3
+
+    elif text == '6️⃣':
+        duration = 6
+    elif text == '1️⃣2️⃣':
+        duration = 12
+    else:
+        return get_duration(update, context)
+
+    # TODO сохраняем подписку здесь.
+
+    return choosing_user_actions(update, context)
 
 
 def cancel(update: Update, context: CallbackContext):
@@ -315,10 +401,22 @@ def get_handler_person():
                     get_menu_type
                 )
             ],
+            'process_menu_type_selection': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    process_menu_type_selection
+                )
+            ],
             'get_duration': [
                 MessageHandler(
                     Filters.text & ~Filters.command,
                     get_duration
+                )
+            ],
+            'process_duration_selection': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    process_duration_selection
                 )
             ],
             # "process_answer_yes_no": [
