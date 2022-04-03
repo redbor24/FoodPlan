@@ -153,6 +153,7 @@ class Allergy(models.Model):
     class Meta:
         verbose_name = 'Аллергия'
         verbose_name_plural = 'Аллергии'
+        ordering = ['sort_order']
 
     def __str__(self):
         return self.name
