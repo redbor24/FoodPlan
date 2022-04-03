@@ -115,6 +115,7 @@ def set_up_commands(bot_instance: Bot) -> None:
     langs_with_commands: Dict[str, Dict[str, str]] = {
         'en': {
             'start': 'Start django bot 🚀',
+            'cancel': 'Reset django bot',
             # 'stats': 'Statistics of bot 📊',
             # 'admin': 'Show admin info ℹ️',
             # 'ask_location': 'Send location 📍',
@@ -123,6 +124,7 @@ def set_up_commands(bot_instance: Bot) -> None:
         },
         'es': {
             'start': 'Iniciar el bot de django 🚀',
+            'cancel': 'Reset django bot',
             # 'stats': 'Estadísticas de bot 📊',
             # 'admin': 'Mostrar información de administrador ℹ️',
             # 'ask_location': 'Enviar ubicación 📍',
@@ -131,6 +133,7 @@ def set_up_commands(bot_instance: Bot) -> None:
         },
         'fr': {
             'start': 'Démarrer le bot Django 🚀',
+            'cancel': 'Reset django bot',
             # 'stats': 'Statistiques du bot 📊',
             # 'admin': "Afficher les informations d'administrateur ℹ️",
             # 'ask_location': 'Envoyer emplacement 📍',
@@ -139,6 +142,7 @@ def set_up_commands(bot_instance: Bot) -> None:
         },
         'ru': {
             'start': 'Запустить django бота 🚀',
+            'cancel': 'Сброс django bot',
             # 'stats': 'Статистика бота 📊',
             # 'admin': 'Показать информацию для админов ℹ️',
             # 'broadcast': 'Отправить сообщение 📨',

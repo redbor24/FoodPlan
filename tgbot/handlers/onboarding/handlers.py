@@ -30,34 +30,46 @@ def escape_characters(text: str) -> str:
 
 
 def start_handler(update: Update, context: CallbackContext) -> str:
-    u, created = User.get_user_and_created(update, context)
+    return choosing_user_actions(update, context)
 
-    if created:
-        update.message.reply_text(
-            'Здравствуйте, для продолжения необходимо заполнить профиль.',
-            reply_markup=ReplyKeyboardRemove()
-        )
 
-        return get_surname(update, context)
-    else:
-        update.message.reply_text(
-            'Здравствуйте, для продолжения необходимо заполнить профиль.',
-            reply_markup=ReplyKeyboardRemove()
-        )
+def choosing_user_actions(update: Update, context: CallbackContext):
+    reply_keyboard = list(keyboard_row_divider(
+        ['🍽 Получить блюдо дня',
+         '👤 Профиль',
+         '📨 Подписка'],
+        1
+    ))
 
-        return get_surname(update, context)
-        # update.message.reply_text(
-        #     'Ваша фамилия:',
-        #     reply_markup=ForceReply(force_reply=True,
-        #                             input_field_placeholder='Фамилия',
-        #                             selective=True)
-        # )
-        # # TODO вернуть get_user_name
-        # return 'get_user_name'
-        # text = static_text.start_not_created.format(first_name=u.first_name)
+    update.message.reply_text(
+        'Выберите действие:',
+        parse_mode=ParseMode.MARKDOWN_V2,
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard,
+            one_time_keyboard=True,
+            input_field_placeholder='',
+            resize_keyboard=True,)
+    )
+    return 'process_user_selection'
 
-    # update.message.reply_text(text=text,
-    #                           reply_markup=make_keyboard_for_start_command())
+
+def process_user_selection(update: Update, context: CallbackContext):
+    text = update.message.text
+
+    if text == '🍽 Получить блюдо дня':
+        update.message.reply_text('🍽 Кушайте манную кашу.',
+                                  reply_markup=ReplyKeyboardRemove())
+        return choosing_user_actions(update, context)
+
+    elif text == '👤 Профиль':
+        update.message.reply_text('👤 Данные Вашего профиля.',
+                                  reply_markup=ReplyKeyboardRemove())
+        return choosing_user_actions(update, context)
+
+    elif text == '📨 Подписка':
+        update.message.reply_text('📨 Данные Вашей подписки.',
+                                  reply_markup=ReplyKeyboardRemove())
+        return choosing_user_actions(update, context)
 
 
 def get_surname(update: Update, context: CallbackContext):
@@ -138,8 +150,7 @@ def save_user_data(update: Update, context: CallbackContext):
     update.message.reply_text('Данные профиля сохранены.',
                               reply_markup=ReplyKeyboardRemove())
 
-    # return start_handler(update, context)
-    return ConversationHandler.END
+    return choosing_user_actions(update, context)
 
 
 def cancel(update: Update, context: CallbackContext):
@@ -157,19 +168,25 @@ def get_handler_person():
             #         inline_button_agreement
             #     )
             # ],
-            # "show_persion_data": [
-            #     MessageHandler(
-            #         Filters.text,
-            #         show_persion_data
-            #     )
-            # ],
-            "get_surname": [
+            'choosing_user_actions': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    choosing_user_actions
+                )
+            ],
+            'process_user_selection': [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    process_user_selection
+                )
+            ],
+            'get_surname': [
                 MessageHandler(
                     Filters.text & ~Filters.command,
                     get_surname
                 )
             ],
-            "get_user_name": [
+            'get_user_name': [
                 MessageHandler(
                     Filters.text & ~Filters.command,
                     get_user_name
@@ -187,19 +204,19 @@ def get_handler_person():
             #         get_date_birth
             #     )
             # ],
-            "save_user_data": [
+            'save_user_data': [
                 MessageHandler(
                     Filters.text & ~Filters.command,
                     save_user_data
                 )
             ],
-            "select_input_phone": [
+            'select_input_phone': [
                 MessageHandler(
                     Filters.text & ~Filters.command,
                     select_input_phone
                 )
             ],
-            "get_telephone": [
+            'get_telephone': [
                 MessageHandler(
                     (Filters.text | Filters.contact) & ~Filters.command,
                     get_telephone
@@ -212,5 +229,5 @@ def get_handler_person():
             #     )
             # ],
         },
-        fallbacks=[CommandHandler("cancel", cancel)]
+        fallbacks=[CommandHandler('cancel', cancel)]
     )
