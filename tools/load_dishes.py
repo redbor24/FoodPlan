@@ -17,13 +17,9 @@ def load_menu_dishes(dishes_json, menu_type):
         return
 
     print(f' Удаление блюд меню "{menu_type}" перед загрузкой...')
-    print(f'  блюд: {Dish.objects.count()}')
-    print(f'  ингредиентов: {DishIngredient.objects.count()}')
     try:
         Dish.objects.filter(menu_type=menu).delete()
-        print(f' Удаление завершено:')
-        print(f'  блюд: {Dish.objects.count()}')
-        print(f'  ингредиентов: {DishIngredient.objects.count()}')
+        print(f' Удаление завершено')
     except Exception as e:
         print(f'Ошибка удаления блюд: {e}')
         return
@@ -31,7 +27,7 @@ def load_menu_dishes(dishes_json, menu_type):
     with open(dishes_json, 'r', encoding='utf-8') as f:
         dishes = json.load(f)
 
-    for dish in dishes:
+    for dish in dishes[:25]:
         print(f"Dish: {dish['title']}, {dish['calories']}")
         new_dish = Dish(
             menu_type=menu,
@@ -43,7 +39,6 @@ def load_menu_dishes(dishes_json, menu_type):
         )
         new_dish.save()
         for ingredient in dish['ingredients']:
-            # print(ingredient['name'], ingredient['amount'], ingredient['measurement'])
             DishIngredient(
                 dish=new_dish,
                 name=ingredient['name'],
@@ -51,10 +46,17 @@ def load_menu_dishes(dishes_json, menu_type):
                 unit=ingredient['measurement']
             ).save()
 
-    print(f' Список блюд для меню "{menu_type}" загружен:')
-    print(f'  блюд: {Dish.objects.count()}')
-    print(f'  ингредиентов: {DishIngredient.objects.count()}')
+    print(f' Загружено блюд для меню "{menu_type}" '
+          f'{Dish.objects.filter(menu_type=menu).count()}')
+
+
+def load_all_dishes():
+    load_menu_dishes('tools/classic_dishes.json', 'Классическое')
+    load_menu_dishes('tools/low_card_dishes.json', 'Низкоуглеводное')
+    load_menu_dishes('tools/keto_dish.json', 'Кето')
+    load_menu_dishes('tools/vegan_dishes.json', 'Вегетарианское')
 
 
 if __name__ == '__main__':
-    load_menu_dishes('json/dishes.json', 'Кето')
+    load_all_dishes()
+    
