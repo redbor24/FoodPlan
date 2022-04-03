@@ -5,14 +5,13 @@ from bs4 import BeautifulSoup
 
 from save_to_json import save_to_json
 
-
 def get_dish_urls():
     url = 'https://keto-diets.ru/recepti/veg'
     response = requests.get(url)
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
-    raw_urls = soup.find_all('article', class_='category-obed')
-    urls = [url.find('a').get('href') for url in raw_urls]
+    raw_urls = soup.select('.category-obed')
+    urls = [url.select_one('a')['href'] for url in raw_urls]
     return urls
 
 
@@ -21,16 +20,16 @@ def parse_dish_page(url):
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
     title = soup.select_one('h1').text
-    img_url = soup.find(class_='cooked-recipe-gallery').find('a').get('href')
+    img_url = soup.select_one('.cooked-recipe-gallery a')['href']
     raw_description = soup.select_one('.cooked-clearfix').text
     description = ''.join(raw_description.split('\n'))
-    raw_ingredients = soup.find('div', class_='cooked-recipe-ingredients')
+    raw_ingredients = soup.select_one('.cooked-recipe-ingredients')
     ingredients = []
     for ingredient in raw_ingredients:
         try:
-            name = ingredient.find(class_='cooked-ing-name').text
-            amount = ingredient.find(class_='cooked-ing-amount').text
-            measurement = ingredient.find(class_='cooked-ing-measurement').text
+            name = ingredient.select_one('.cooked-ing-name').text
+            amount = ingredient.select_one('.cooked-ing-amount').text
+            measurement = ingredient.select_one('.cooked-ing-measurement').text
             ingredients.append(
                 {
                     'name': name,
