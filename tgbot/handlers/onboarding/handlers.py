@@ -33,8 +33,18 @@ def start_handler(update: Update, context: CallbackContext) -> str:
     u, created = User.get_user_and_created(update, context)
 
     if created:
+        update.message.reply_text(
+            'Здравствуйте, для продолжения необходимо заполнить профиль.',
+            reply_markup=ReplyKeyboardRemove()
+        )
+
         return get_surname(update, context)
     else:
+        update.message.reply_text(
+            'Здравствуйте, для продолжения необходимо заполнить профиль.',
+            reply_markup=ReplyKeyboardRemove()
+        )
+
         return get_surname(update, context)
         # update.message.reply_text(
         #     'Ваша фамилия:',
@@ -103,7 +113,7 @@ def get_telephone(update: Update, context: CallbackContext):
     if contact:
         contact = update.effective_message.contact
         update.message.text = contact.phone_number
-        # return show_persion_data(update, context)
+        return save_user_data(update, context)
 
     update.message.reply_text(
         'Ваш телефон:',
@@ -111,7 +121,25 @@ def get_telephone(update: Update, context: CallbackContext):
                                 input_field_placeholder='Телефон',
                                 selective=True)
     )
-    return 'show_persion_data'
+    return 'save_user_data'
+
+
+def save_user_data(update: Update, context: CallbackContext):
+    """Сохранение данных пользователя"""
+    user = User.get_user(update, context)
+    if context.user_data['last_name']:
+        user.last_name = context.user_data['last_name']
+    if context.user_data['first_name']:
+        user.first_name = context.user_data['first_name']
+    if update.message.text:
+        user.phone = update.message.text
+    user.save()
+
+    update.message.reply_text('Данные профиля сохранены.',
+                              reply_markup=ReplyKeyboardRemove())
+
+    # return start_handler(update, context)
+    return ConversationHandler.END
 
 
 def cancel(update: Update, context: CallbackContext):
@@ -159,12 +187,12 @@ def get_handler_person():
             #         get_date_birth
             #     )
             # ],
-            # "get_passport": [
-            #     MessageHandler(
-            #         Filters.text & ~Filters.command,
-            #         get_passport
-            #     )
-            # ],
+            "save_user_data": [
+                MessageHandler(
+                    Filters.text & ~Filters.command,
+                    save_user_data
+                )
+            ],
             "select_input_phone": [
                 MessageHandler(
                     Filters.text & ~Filters.command,
