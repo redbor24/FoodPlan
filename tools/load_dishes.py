@@ -34,7 +34,7 @@ def load_menu_dishes(dishes_json, menu_type):
             name=dish['title'][:255],
             description=dish['description'][:2048],
             recipe=dish['recept'][:2048],
-            calories=dish['calories'],
+            calories=dish['calories'][:20],
             picture=dish['img_url']
         )
         new_dish.save()
