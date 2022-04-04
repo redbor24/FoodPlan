@@ -77,8 +77,8 @@ def choosing_user_actions(update: Update, context: CallbackContext):
 def process_user_selection(update: Update, context: CallbackContext):
     text = update.message.text
 
-    user, created = User.get_user_and_created(update, context)
-    subscribe = Subscribe(user=user)
+    user = User.get_user(update, context)
+    subscribe = Subscribe.objects.get(user=user)
 
     if text == '🍽 Получить блюдо дня':
         update.message.reply_text(f'🍽 {subscribe.get_subscribe_dish()}')
@@ -86,7 +86,8 @@ def process_user_selection(update: Update, context: CallbackContext):
 
     elif text == '👤 Профиль':
         update.message.reply_text(
-            f'👤 Ваш профиль:\n{user.get_description()}'
+            f'{user.get_description()}',
+            parse_mode=ParseMode.MARKDOWN_V2
         )
         return choosing_user_actions(update, context)
 
