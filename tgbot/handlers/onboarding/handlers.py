@@ -62,7 +62,6 @@ def choosing_user_actions(update: Update, context: CallbackContext):
                 parse_mode=ParseMode.MARKDOWN_V2,
                 reply_markup=ReplyKeyboardMarkup(
                     reply_keyboard,
-                    # one_time_keyboard=True,
                     input_field_placeholder='',
                     resize_keyboard=True,)
             )
@@ -78,16 +77,24 @@ def choosing_user_actions(update: Update, context: CallbackContext):
 def process_user_selection(update: Update, context: CallbackContext):
     text = update.message.text
 
+    user, created = User.get_user_and_created(update, context)
+    subscribe = Subscribe(user=user)
+
     if text == '🍽 Получить блюдо дня':
-        update.message.reply_text('🍽 Кушайте манную кашу.')
+        update.message.reply_text(f'🍽 {subscribe.get_subscribe_dish()}')
         return choosing_user_actions(update, context)
 
     elif text == '👤 Профиль':
-        update.message.reply_text('👤 Данные Вашего профиля.')
+        update.message.reply_text(
+            f'👤 Ваш профиль:\n{user.get_description()}'
+        )
         return choosing_user_actions(update, context)
 
     elif text == '📨 Подписка':
-        update.message.reply_text('📨 Данные Вашей подписки.')
+        update.message.reply_text(
+            '📨 Ваша подписка:\n'
+            f'{subscribe.get_subscribe_description()}'
+        )
         return choosing_user_actions(update, context)
 
 

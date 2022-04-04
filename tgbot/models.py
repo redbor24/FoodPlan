@@ -92,6 +92,11 @@ class User(CreateUpdateTracker):
         return f"{self.first_name} {self.last_name}" \
             if self.last_name else f"{self.first_name}"
 
+    def get_description(self):
+        return f'{self.first_name}\n' \
+               f'{self.last_name}\n' \
+               f'{self.phone}'
+
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = '_Пользователи'
@@ -267,6 +272,7 @@ class Subscribe(models.Model):
     allergy = models.ManyToManyField(
         Allergy,
         verbose_name='Аллергии',
+        # related_name='subscribe_allergies'
     )
     menu_type = models.ForeignKey(
         MenuType,
@@ -291,15 +297,25 @@ class Subscribe(models.Model):
     def __str__(self):
         return f'Подписка "{self.id}"'
 
+    def get_allergies(self):
+        allergies = ''
+        for allergy in self.allergy.all():
+            allergies += f'{str(allergy)}, '
+        return allergies[:-2]
+
     def get_subscribe_dish(self):
-        menu_type_dishes = Dish.objects.filter(menu_type=self.menu_type)
         subs_allergies = set(self.allergy.filter(~Q(name="нет")))
-        # print(f'subs_allergies: {subs_allergies}')
         dishes = []
-        # for dish in menu_type_dishes:
         for dish in Dish.objects.filter(menu_type=self.menu_type):
-            dish_allergies = dish.get_allergies()
-            # if not dish_allergies & subs_allergies:
             if not dish.get_allergies() & subs_allergies:
                 dishes.append(dish)
         return dishes[random.randint(0, len(dishes) - 1)]
+
+    def get_subscribe_description(self):
+        return f'Пользователь: {self.user}' \
+               f'Количество приёмов пищи за день: {self.number_of_meals}\n' \
+               f'Количество персон: {self.number_of_person}\n' \
+               f'Аллергии: {self.get_allergies()}\n' \
+               f'Тип меню: {self.menu_type}\n' \
+               f'Длительность подписки, мес.: {self.duration}\n' \
+               f'Подписка оплачена: {"да" if self.subscription_paid else "нет"}'

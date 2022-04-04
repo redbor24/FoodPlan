@@ -50,11 +50,6 @@ class UserAdmin(admin.ModelAdmin):
             )
 
 
-# @admin.register(Location)
-# class LocationAdmin(admin.ModelAdmin):
-#     list_display = ['id', 'user_id', 'created_at']
-
-
 @admin.register(MenuType)
 class MenuTypeAdmin(admin.ModelAdmin):
     list_display = ['name']
