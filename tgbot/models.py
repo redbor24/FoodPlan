@@ -89,13 +89,15 @@ class User(CreateUpdateTracker):
     def tg_str(self) -> str:
         if self.username:
             return f'@{self.username}'
-        return f"{self.first_name} {self.last_name}" \
-            if self.last_name else f"{self.first_name}"
+        return f'{self.first_name} {self.last_name}' \
+            if self.last_name else f'{self.first_name}'
 
     def get_description(self):
-        return f'{self.first_name}\n' \
-               f'{self.last_name}\n' \
-               f'{self.phone}'
+        return f'_Ваши персональные данные_:\n' \
+            f'*Фамилия:* {self.last_name}\n' \
+            f'*Имя:* {self.first_name}\n' \
+            f'*☎️:* {self.phone}\n' \
+
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -110,8 +112,8 @@ class Location(CreateTracker):
     objects = GetOrNoneManager()
 
     def __str__(self):
-        return f"user: {self.user}" \
-               f", created at {self.created_at.strftime('(%H:%M, %d %B %Y)')}"
+        return f'user: {self.user}' \
+               f', created at {self.created_at.strftime("(%H:%M, %d %B %Y)")}'
 
     def save(self, *args, **kwargs):
         super(Location, self).save(*args, **kwargs)
@@ -313,7 +315,7 @@ class Subscribe(models.Model):
         return dishes[random.randint(0, len(dishes) - 1)]
 
     def get_subscribe_description(self):
-        return f'Пользователь: {self.user}' \
+        return f'Пользователь: {self.user}\n' \
                f'Количество приёмов пищи за день: {self.number_of_meals}\n' \
                f'Количество персон: {self.number_of_person}\n' \
                f'Аллергии: {self.get_allergies()}\n' \
