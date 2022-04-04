@@ -212,7 +212,6 @@ class Dish(models.Model):
 
     def get_full_description(self):
         dish_description = f'''{self.picture}
-{self.picture}
 Блюдо: {self.name}
 Описание: {self.description}
 Рецепт приготовления: {self.recipe}
