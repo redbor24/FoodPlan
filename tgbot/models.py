@@ -299,18 +299,29 @@ class Subscribe(models.Model):
         return f'Подписка "{self.id}"'
 
     def get_allergies(self):
+        subs_allergies = self.allergy.all()
         allergies = ''
-        for allergy in self.allergy.all():
-            allergies += f'{str(allergy)}, '
-        return allergies[:-2]
+        if not subs_allergies:
+            for allergy in subs_allergies:
+                allergies += f'{str(allergy)}, '
+            allergies = allergies[:-2]
+        else:
+            allergies = 'Аллергий нет'
+        return allergies
 
     def get_subscribe_dish(self):
         subs_allergies = set(self.allergy.filter(~Q(name="нет")))
-        dishes = []
-        for dish in Dish.objects.filter(menu_type=self.menu_type):
-            if not dish.get_allergies() & subs_allergies:
-                dishes.append(dish)
-        return dishes[random.randint(0, len(dishes) - 1)].get_full_description()
+        subs_dishes = Dish.objects.filter(menu_type=self.menu_type)
+        if not subs_dishes:
+            dishes = []
+            for dish in subs_dishes:
+                if not dish.get_allergies() & subs_allergies:
+                    dishes.append(dish)
+            dish_random_index = random.randint(0, len(dishes) - 1)
+            dish_description = dishes[dish_random_index].get_full_description()
+        else:
+            dish_description = 'По подписке блюда не найдены'
+        return dish_description
 
     def get_subscribe_description(self):
         return f'Пользователь: {self.user}\n' \
