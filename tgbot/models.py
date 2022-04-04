@@ -312,7 +312,7 @@ class Subscribe(models.Model):
         for dish in Dish.objects.filter(menu_type=self.menu_type):
             if not dish.get_allergies() & subs_allergies:
                 dishes.append(dish)
-        return dishes[random.randint(0, len(dishes) - 1)]
+        return dishes[random.randint(0, len(dishes) - 1)].get_full_description()
 
     def get_subscribe_description(self):
         return f'Пользователь: {self.user}\n' \
