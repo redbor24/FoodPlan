@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from typing import Union, Optional, Tuple
+import random
+from typing import Optional, Tuple, Union
 
-from django.db.models import QuerySet, Manager
+from django.db import models
+from django.db.models import Manager, Q, QuerySet
 from telegram import Update
 from telegram.ext import CallbackContext
 
 from dtb.settings import DEBUG
 from tgbot.handlers.utils.info import extract_user_data_from_update
-from utils.models import CreateUpdateTracker, nb, CreateTracker
-from utils.models import GetOrNoneManager
-from django.db import models
-from django.db.models import Q
-import random
+from utils.models import (CreateTracker, CreateUpdateTracker, GetOrNoneManager,
+                          nb)
 
 
 class AdminUserManager(Manager):
@@ -21,7 +20,7 @@ class AdminUserManager(Manager):
 
 
 class User(CreateUpdateTracker):
-    user_id = models.PositiveBigIntegerField(primary_key=True)  # telegram_id
+    user_id = models.PositiveBigIntegerField(primary_key=True)
     username = models.CharField(max_length=32, **nb)
     first_name = models.CharField(max_length=256)
     last_name = models.CharField(max_length=256, **nb)

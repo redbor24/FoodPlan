@@ -1,12 +1,12 @@
 import re
 
-from telegram import (ForceReply,
-                      KeyboardButton, LabeledPrice, ParseMode,
+from telegram import (ForceReply, KeyboardButton, LabeledPrice, ParseMode,
                       ReplyKeyboardMarkup, ReplyKeyboardRemove, Update)
 from telegram.ext import (CallbackContext, CommandHandler, ConversationHandler,
                           Filters, MessageHandler)
-from tgbot.models import Allergy, MenuType, Subscribe, User
+
 from dtb.settings import PROVIDER_TOKEN
+from tgbot.models import Allergy, MenuType, Subscribe, User
 
 
 def keyboard_row_divider(full_list, row_width=2):
@@ -180,7 +180,6 @@ def save_user_data(update: Update, context: CallbackContext):
 
 
 def get_allergy(update: Update, context: CallbackContext):
-    """"""
     reply_keyboard = list()
     reply_keyboard.append(['💾 Сохранить'])
 
@@ -199,7 +198,6 @@ def get_allergy(update: Update, context: CallbackContext):
         parse_mode=ParseMode.MARKDOWN_V2,
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard,
-            # one_time_keyboard=True,
             input_field_placeholder='',
             resize_keyboard=True,)
     )
@@ -224,7 +222,6 @@ def process_allergies_selection(update: Update, context: CallbackContext):
 
 
 def get_number_of_meals(update: Update, context: CallbackContext):
-    """"""
     update.message.reply_text(
         'Количество приёмов пищи за день:',
         reply_markup=ForceReply(force_reply=True,
@@ -235,7 +232,6 @@ def get_number_of_meals(update: Update, context: CallbackContext):
 
 
 def get_number_of_person(update: Update, context: CallbackContext):
-    """"""
     context.user_data['number_of_meals'] = update.message.text
 
     update.message.reply_text(
@@ -248,7 +244,6 @@ def get_number_of_person(update: Update, context: CallbackContext):
 
 
 def get_menu_type(update: Update, context: CallbackContext):
-    """"""
     context.user_data['number_of_person'] = update.message.text
 
     reply_keyboard = list()
@@ -261,7 +256,6 @@ def get_menu_type(update: Update, context: CallbackContext):
         parse_mode=ParseMode.MARKDOWN_V2,
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard,
-            # one_time_keyboard=True,
             input_field_placeholder='',
             resize_keyboard=True,)
     )
@@ -283,7 +277,6 @@ def process_menu_type_selection(update: Update, context: CallbackContext):
 
 
 def get_duration(update: Update, context: CallbackContext):
-    """"""
     reply_keyboard = list(keyboard_row_divider(
         ['1️⃣',
          '3️⃣',
@@ -297,7 +290,6 @@ def get_duration(update: Update, context: CallbackContext):
         parse_mode=ParseMode.MARKDOWN_V2,
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard,
-            # one_time_keyboard=True,
             input_field_placeholder='',
             resize_keyboard=True,)
     )
@@ -393,11 +385,6 @@ def get_handler_person():
     return ConversationHandler(
         entry_points=[CommandHandler('start', start_handler)],
         states={
-            # "inline_button_agreement": [
-            #     CallbackQueryHandler(
-            #         inline_button_agreement
-            #     )
-            # ],
             'choosing_user_actions': [
                 MessageHandler(
                     Filters.text & ~Filters.command,
