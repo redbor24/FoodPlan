@@ -31,9 +31,9 @@ def load_menu_dishes(dishes_json, menu_type):
         print(f"Dish: {dish['title']}, {dish['calories']}")
         new_dish = Dish(
             menu_type=menu,
-            name=dish['title'],
-            description=dish['description'],
-            recipe=dish['recept'],
+            name=dish['title'][:255],
+            description=dish['description'][:2048],
+            recipe=dish['recept'][:2048],
             calories=dish['calories'],
             picture=dish['img_url']
         )
@@ -59,4 +59,3 @@ def load_all_dishes():
 
 if __name__ == '__main__':
     load_all_dishes()
-    

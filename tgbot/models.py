@@ -184,7 +184,7 @@ class Dish(models.Model):
         verbose_name='Калорийность',
     )
     picture = models.URLField(
-        max_length=1024,
+        max_length=4096,
         verbose_name='Ссылка на картинку',
     )
 
