@@ -169,7 +169,7 @@ def save_user_data(update: Update, context: CallbackContext):
     if context.user_data['first_name']:
         user.first_name = context.user_data['first_name']
     if update.message.text:
-        user.phone = update.message.text
+        user.phone = escape_characters(update.message.text)
 
     user.save()
 
