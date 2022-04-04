@@ -161,6 +161,14 @@ if TELEGRAM_TOKEN is None:
     )
     sys.exit(1)
 
+PROVIDER_TOKEN = os.getenv("PROVIDER_TOKEN")
+if PROVIDER_TOKEN is None:
+    logging.error(
+        "Please provide PROVIDER_TOKEN in .env file.\n"
+        "Example of .env file: https://github.com/ohld/django-telegram-bot/blob/main/.env_example"
+    )
+    sys.exit(1)
+
 TELEGRAM_LOGS_CHAT_ID = os.getenv("TELEGRAM_LOGS_CHAT_ID", default=None)
 
 # -----> SENTRY
@@ -182,4 +190,3 @@ TELEGRAM_LOGS_CHAT_ID = os.getenv("TELEGRAM_LOGS_CHAT_ID", default=None)
 #     # django.contrib.auth) you may enable sending PII data.
 #     send_default_pii=True
 # )
-

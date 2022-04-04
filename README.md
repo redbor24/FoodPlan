@@ -42,6 +42,7 @@ pip install -r requirements.txt
 DJANGO_DEBUG=True
 DATABASE_URL=sqlite:///db.sqlite3
 TELEGRAM_TOKEN=<Токен вашего бота>
+PROVIDER_TOKEN=<Токен провайдера для оплаты>
 ```
 
 Запустите миграцию для настройки базы данных SQLite:
