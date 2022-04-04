@@ -3,15 +3,15 @@ import re
 
 from django.utils import timezone
 from telegram import (ForceReply, InlineKeyboardButton, InlineKeyboardMarkup,
-                      KeyboardButton, ParseMode, ReplyKeyboardMarkup,
-                      ReplyKeyboardRemove, Update)
-from telegram.ext import (CallbackContext, CallbackQueryHandler,
-                          CommandHandler, ConversationHandler, Filters,
-                          MessageHandler)
+                      KeyboardButton, LabeledPrice, ParseMode,
+                      ReplyKeyboardMarkup, ReplyKeyboardRemove, Update)
+from telegram.ext import (CallbackContext, CommandHandler, ConversationHandler,
+                          Filters, MessageHandler, PreCheckoutQueryHandler)
 from tgbot.handlers.onboarding import static_text
 from tgbot.handlers.onboarding.keyboards import make_keyboard_for_start_command
 from tgbot.handlers.utils.info import extract_user_data_from_update
 from tgbot.models import Allergy, MenuType, Subscribe, User
+from dtb.settings import PROVIDER_TOKEN
 
 
 def keyboard_row_divider(full_list, row_width=2):
@@ -38,7 +38,7 @@ def start_handler(update: Update, context: CallbackContext) -> str:
 
 
 def choosing_user_actions(update: Update, context: CallbackContext):
-    u, created = User.get_user_and_created(update, context)
+    user, created = User.get_user_and_created(update, context)
 
     if created:
         update.message.reply_text(
@@ -47,31 +47,32 @@ def choosing_user_actions(update: Update, context: CallbackContext):
         )
         return get_surname(update, context)
     else:
-        # TODO тут нужно проверить на наличие не оплаченной подписки.
+        subscribe = Subscribe.objects.filter(user=user).first()
 
-        update.message.reply_text(
-            'Здравствуйте, для продолжения необходимо оформить подписку.',
-            reply_markup=ReplyKeyboardRemove()
-        )
-        return get_allergy(update, context)
+        if subscribe and subscribe.subscription_paid:
+            reply_keyboard = list(keyboard_row_divider(
+                ['🍽 Получить блюдо дня',
+                 '👤 Профиль',
+                 '📨 Подписка'],
+                1
+            ))
 
-        # reply_keyboard = list(keyboard_row_divider(
-        #     ['🍽 Получить блюдо дня',
-        #     '👤 Профиль',
-        #     '📨 Подписка'],
-        #     1
-        # ))
-
-        # update.message.reply_text(
-        #     'Выберите действие:',
-        #     parse_mode=ParseMode.MARKDOWN_V2,
-        #     reply_markup=ReplyKeyboardMarkup(
-        #         reply_keyboard,
-        #         # one_time_keyboard=True,
-        #         input_field_placeholder='',
-        #         resize_keyboard=True,)
-        # )
-        # return 'process_user_selection'
+            update.message.reply_text(
+                'Выберите действие:',
+                parse_mode=ParseMode.MARKDOWN_V2,
+                reply_markup=ReplyKeyboardMarkup(
+                    reply_keyboard,
+                    # one_time_keyboard=True,
+                    input_field_placeholder='',
+                    resize_keyboard=True,)
+            )
+            return 'process_user_selection'
+        else:
+            update.message.reply_text(
+                'Для продолжения необходимо оформить подписку.',
+                reply_markup=ReplyKeyboardRemove()
+            )
+            return get_allergy(update, context)
 
 
 def process_user_selection(update: Update, context: CallbackContext):
@@ -304,11 +305,12 @@ def get_duration(update: Update, context: CallbackContext):
 def process_duration_selection(update: Update, context: CallbackContext):
     text = update.message.text
 
-    duration = 1
+    duration = 0
 
-    if text == '3️⃣':
+    if text == '1️⃣':
+        duration = 1
+    elif text == '3️⃣':
         duration = 3
-
     elif text == '6️⃣':
         duration = 6
     elif text == '1️⃣2️⃣':
@@ -316,7 +318,64 @@ def process_duration_selection(update: Update, context: CallbackContext):
     else:
         return get_duration(update, context)
 
-    # TODO сохраняем подписку здесь и уходим на оплату.
+    context.user_data['duration'] = duration
+
+    return start_invoice(update, context)
+
+
+def start_invoice(update: Update, context: CallbackContext) -> None:
+    """Send an invoice"""
+    duration = int(context.user_data['duration'])
+    price = (duration * 100) * 100
+    chat_id = update.message.chat_id
+    title = 'Подписка на FoodPlan8'
+    description = f'Подписка на FoodPlan8: {duration} месяцев.'
+    payload = "FoodPlan8"
+    provider_token = PROVIDER_TOKEN
+    currency = "rub"
+    prices = [LabeledPrice("FoodPlan8", price)]
+
+    update.message.reply_text('Мы ожидаем от Вас оплату...',
+                              reply_markup=ReplyKeyboardRemove())
+
+    context.bot.send_invoice(
+        chat_id, title, description, payload, provider_token, currency, prices
+    )
+
+
+def precheckout_callback(update: Update, context: CallbackContext):
+    """Answer the PreQecheckoutQuery"""
+    query = update.pre_checkout_query
+    if query.invoice_payload != 'FoodPlan8':
+        query.answer(ok=False, error_message="Something went wrong...")
+    else:
+        query.answer(ok=True)
+
+
+def successful_payment_callback(update: Update, context: CallbackContext):
+    """Confirms the successful payment"""
+    update.message.reply_text('Мы получили от Вас оплату',
+                              reply_markup=ReplyKeyboardRemove())
+
+    user = User.get_user(update, context)
+
+    subscribe = Subscribe(user=user)
+    subscribe.number_of_meals = context.user_data['number_of_meals']
+    subscribe.number_of_person = context.user_data['number_of_person']
+
+    menu_type = MenuType.objects.get(pk=context.user_data['menu_type'])
+    subscribe.menu_type = menu_type
+
+    subscribe.duration = context.user_data['duration']
+
+    subscribe.subscription_paid = True
+
+    subscribe.save()
+
+    for allergy_id in context.user_data['allergy_ids']:
+        subscribe.allergy.add(
+            Allergy.objects.get(pk=allergy_id)
+        )
 
     return choosing_user_actions(update, context)
 
@@ -426,12 +485,10 @@ def get_handler_person():
                     process_duration_selection
                 )
             ],
-            # "process_answer_yes_no": [
-            #     MessageHandler(
-            #         Filters.text & ~Filters.command,
-            #         process_answer_yes_no
-            #     )
-            # ],
         },
-        fallbacks=[CommandHandler('cancel', cancel)]
+        fallbacks=[
+            MessageHandler(Filters.successful_payment,
+                           successful_payment_callback),
+            CommandHandler('cancel', cancel)
+        ]
     )

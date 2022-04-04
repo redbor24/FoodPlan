@@ -11,6 +11,7 @@ from telegram.ext import (
     Updater, Dispatcher, Filters,
     CommandHandler, MessageHandler,
     CallbackQueryHandler,
+    PreCheckoutQueryHandler
 )
 
 from dtb.celery import app  # event processing in async mode
@@ -33,6 +34,9 @@ def setup_dispatcher(dp):
     # onboarding
     # dp.add_handler(CommandHandler("start", onboarding_handlers.command_start))
     dp.add_handler(onboarding_handlers.get_handler_person())
+    dp.add_handler(
+        PreCheckoutQueryHandler(onboarding_handlers.precheckout_callback)
+    )
 
     # # admin commands
     # dp.add_handler(CommandHandler("admin", admin_handlers.admin))
