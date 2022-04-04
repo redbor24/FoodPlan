@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Union, Optional, Tuple
 
-from django.db import models
 from django.db.models import QuerySet, Manager
 from telegram import Update
 from telegram.ext import CallbackContext

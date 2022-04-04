@@ -1,15 +1,10 @@
-import datetime
 import re
 
-from django.utils import timezone
-from telegram import (ForceReply, InlineKeyboardButton, InlineKeyboardMarkup,
+from telegram import (ForceReply,
                       KeyboardButton, LabeledPrice, ParseMode,
                       ReplyKeyboardMarkup, ReplyKeyboardRemove, Update)
 from telegram.ext import (CallbackContext, CommandHandler, ConversationHandler,
-                          Filters, MessageHandler, PreCheckoutQueryHandler)
-from tgbot.handlers.onboarding import static_text
-from tgbot.handlers.onboarding.keyboards import make_keyboard_for_start_command
-from tgbot.handlers.utils.info import extract_user_data_from_update
+                          Filters, MessageHandler)
 from tgbot.models import Allergy, MenuType, Subscribe, User
 from dtb.settings import PROVIDER_TOKEN
 
